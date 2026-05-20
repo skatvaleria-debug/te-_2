@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibecoding Studio v3.7</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon-32x.32.png">
+    
+    <style>
+        :root {
+            --bg-site: #434451;
+            --accent-site: #EDEBE7;
+            --bg-canvas: #0d0f35;
+            --dot-color: #ffffff;
+            --dot-size: 1.5px;
+            --grid-gap: 25px;
+            --dot-opacity: 0.3;
+            --canvas-scale: 0.65;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body, input, select, button {
+            font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
+            font-weight: 400;
+        }
+
+        body {
+            background-color: var(--accent-site);
+            color: var(--accent-site);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ПАНЕЛЬ УПРАВЛЕНИЯ */
+        .sidebar {
+            width: 380px;
+            background: var(--bg-site);
+            border-right: 1px solid rgba(237, 235, 231, 0.2);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px 20px 10px 20px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-site);
+            font-weight: bold;
+        }
+
+        .btn-action {
+            background: transparent;
+            border: 1px solid var(--accent-site);
+            color: var(--accent-site);
+            padding: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .btn-action:hover {
+            background: var(--accent-site);
+            color: var(--bg-site);
+        }
+
+        .controls-wrapper {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--accent-site);
+            margin: 25px 0 12px 0;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid rgba(237, 235, 231, 0.3);
+            padding-bottom: 5px;
+            opacity: 0.9;
+        }
+
+        .control-group { margin-bottom: 18px; }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--accent-site);
+            margin-bottom: 8px;
+        }
+
+        label span { font-family: monospace; opacity: 0.8; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(237, 235, 231, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-site);
+            cursor: pointer;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(237, 235, 231, 0.3);
+            border-radius: 4px;
+            color: var(--accent-site);
+            outline: none;
+            font-size: 13px;
+        }
+        option {
+            background: var(--bg-site);
+            color: var(--accent-site);
+        }
+
+        /* Инвертированные пикеры */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: 1px solid rgba(237, 235, 231, 0.4);
+            width: 100%;
+            height: 35px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-site);
+            border: none;
+            border-radius: 4px;
+            color: var(--bg-site);
+            cursor: pointer;
+            margin-top: 10px;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            transition: background 0.2s ease;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .layers-panel {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            max-height: 220px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 6px;
+            border: 1px solid rgba(237, 235, 231, 0.2);
+            margin-bottom: 10px;
+        }
+
+        .layers-list {
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 5px;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(237, 235, 231, 0.05);
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            color: var(--accent-site);
+        }
+        .layer-item.active {
+            border-color: var(--accent-site);
+            background: rgba(237, 235, 231, 0.15);
+        }
+        .layer-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+
+        .layer-controls-right {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .layer-btn { background: none; border: none; color: var(--accent-site); cursor: pointer; padding: 2px 4px; font-size: 11px; opacity: 0.7; }
+        .layer-btn:hover { opacity: 1; }
+
+        /* ВЬЮПОРТ РАБОЧЕЙ ЗОНЫ */
+        .viewport {
+            flex-grow: 1;
+            position: relative;
+            background: var(--accent-site);
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px;
+        }
+
+        .canvas {
+            width: 700px;
+            height: 1000px;
+            background-color: var(--bg-canvas);
+            position: relative;
+            transform: scale(var(--canvas-scale));
+            transform-origin: center center;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .canvas-grid {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size));
+            background-size: var(--grid-gap) var(--grid-gap);
+            opacity: var(--dot-opacity);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .layer-element {
+            position: absolute;
+            cursor: move;
+            z-index: 5;
+            transform-origin: top left;
+        }
+        .layer-element.selected {
+            outline: 1px solid var(--accent-site);
+        }
+
+        canvas, svg { display: block; overflow: visible; pointer-events: none; }
+
+        .zoom-info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-site);
+            color: var(--accent-site);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: monospace;
+            border: 1px solid rgba(237,235,231,0.2);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">Vibecoding Studio v3.7</div>
+        
+        <!-- Панель Отмены / Повтора -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 20px 15px 20px; border-bottom: 1px solid rgba(237,235,231,0.2);">
+            <button class="btn-action" onclick="undo()">◀ Отменить</button>
+            <button class="btn-action" onclick="redo()">Повторить ▶</button>
+        </div>
+        
+        <div class="controls-wrapper">
+            <div class="section-title">Кастомизация Фона</div>
+            <div class="control-group">
+                <label>Цвет холста</label>
+                <input type="color" id="bg-color-picker" value="#0d0f35">
+            </div>
+            <div class="control-group">
+                <label>Цвет точек сетки</label>
+                <input type="color" id="dot-color-picker" value="#ffffff">
+            </div>
+            <div class="control-group">
+                <label>Шаг сетки: <span id="val-grid-gap">25px</span></label>
+                <input type="range" id="param-gap" min="10" max="80" value="25" oninput="updGrid('gap', this.value)" onchange="pushHistory()">
+            </div>
+            <div class="control-group">
+                <label>Размер точек: <span id="val-grid-dotSize">1.5px</span></label>
+                <input type="range" id="param-dot-size" min="0.5" max="10" step="0.5" value="1.5" oninput="updGrid('dotSize', this.value)" onchange="pushHistory()">
+            </div>
+            <div class="control-group">
+                <label>Непрозрачность сетки: <span id="val-grid-dotOpacity">0.3</span></label>
+                <input type="range" id="param-dot-opacity" min="0" max="1" step="0.05" value="0.3" oninput="updGrid('dotOpacity', this.value)" onchange="pushHistory()">
+            </div>
+            
+            <div class="layers-panel">
+                <div class="section-title" style="margin: 0 0 5px 0; border: none; padding: 0;">Список слоев</div>
+                <div class="layers-list" id="layers-ui"></div>
+            </div>
+
+            <div id="prop-editor"></div>
+
+            <div class="section-title">Создать слой</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button class="btn" onclick="addLayer('text')">+ Текст</button>
+                <button class="btn" onclick="addLayer('lace')">+ Кружево</button>
+                <button class="btn" onclick="addLayer('portal')">+ Форма из крестиков</button>
+                <button class="btn" onclick="addLayer('satellites')">+ Мелкие элементы</button>
+            </div>
+
+            <div class="section-title">Сохранить плакат</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button class="btn" onclick="exportPoster('svg')">Экспорт SVG</button>
+                <button class="btn" onclick="exportPoster('png')">Экспорт PNG</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="viewport" id="viewport">
+        <div class="canvas" id="canvas">
+            <div class="canvas-grid" id="grid"></div>
+        </div>
+        <div class="zoom-info" id="zoom-val">Zoom: 65%</div>
+    </div>
+
+    <script>
+        let state = {
+            scale: 0.65,
+            canvasBg: '#0d0f35',
+            canvasDot: '#ffffff',
+            grid: { gap: 25, dotSize: 1.5, dotOpacity: 0.3 },
+            layers: [],
+            selectedId: null
+        };
+
+        let historyStack = [];
+        let redoStack = [];
+
+        function pushHistory() {
+            const snapshot = JSON.stringify({
+                layers: state.layers,
+                canvasBg: state.canvasBg,
+                canvasDot: state.canvasDot,
+                grid: state.grid
+            });
+            if (historyStack.length === 0 || historyStack[historyStack.length - 1] !== snapshot) {
+                historyStack.push(snapshot);
+                redoStack = [];
+            }
+        }
+
+        function undo() {
+            if (historyStack.length > 1) {
+                redoStack.push(historyStack.pop());
+                const previous = JSON.parse(historyStack[historyStack.length - 1]);
+                restoreFromSnapshot(previous);
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                const next = JSON.parse(redoStack.pop());
+                historyStack.push(JSON.stringify(next));
+                restoreFromSnapshot(next);
+            }
+        }
+
+        function restoreFromSnapshot(snapshot) {
+            state.layers = snapshot.layers;
+            state.canvasBg = snapshot.canvasBg;
+            state.canvasDot = snapshot.canvasDot;
+            state.grid = snapshot.grid;
+            
+            document.getElementById('bg-color-picker').value = state.canvasBg;
+            document.getElementById('dot-color-picker').value = state.canvasDot;
+            document.getElementById('param-gap').value = state.grid.gap;
+            document.getElementById('param-dot-size').value = state.grid.dotSize || 1.5;
+            document.getElementById('param-dot-opacity').value = state.grid.dotOpacity || 0.3;
+            
+            document.getElementById('val-grid-gap').textContent = state.grid.gap + 'px';
+            document.getElementById('val-grid-dotSize').textContent = (state.grid.dotSize || 1.5) + 'px';
+            document.getElementById('val-grid-dotOpacity').textContent = state.grid.dotOpacity || 0.3;
+
+            document.documentElement.style.setProperty('--bg-canvas', state.canvasBg);
+            document.documentElement.style.setProperty('--dot-color', state.canvasDot);
+            document.documentElement.style.setProperty('--grid-gap', state.grid.gap + 'px');
+            document.documentElement.style.setProperty('--dot-size', (state.grid.dotSize || 1.5) + 'px');
+            document.documentElement.style.setProperty('--dot-opacity', state.grid.dotOpacity || 0.3);
+            
+            render();
+            syncUI();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                if (e.shiftKey) redo(); else undo();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+        const canvas = document.getElementById('canvas');
+        const layersUI = document.getElementById('layers-ui');
+        const propEditor = document.getElementById('prop-editor');
+
+        document.getElementById('bg-color-picker').addEventListener('input', (e) => {
+            state.canvasBg = e.target.value;
+            document.documentElement.style.setProperty('--bg-canvas', e.target.value);
+        });
+        document.getElementById('bg-color-picker').addEventListener('change', () => pushHistory());
+
+        document.getElementById('dot-color-picker').addEventListener('input', (e) => {
+            state.canvasDot = e.target.value;
+            document.documentElement.style.setProperty('--dot-color', e.target.value);
+        });
+        document.getElementById('dot-color-picker').addEventListener('change', () => pushHistory());
+
+        window.updGrid = (k, v) => {
+            state.grid[k] = parseFloat(v);
+            document.getElementById(`val-grid-${k}`).textContent = v + (k === 'gap' || k === 'dotSize' ? 'px' : '');
+            if (k === 'gap') document.documentElement.style.setProperty('--grid-gap', v + 'px');
+            if (k === 'dotSize') document.documentElement.style.setProperty('--dot-size', v + 'px');
+            if (k === 'dotOpacity') document.documentElement.style.setProperty('--dot-opacity', v);
+            render();
+        };
+
+        document.getElementById('viewport').addEventListener('wheel', (e) => {
+            e.preventDefault();
+            state.scale += e.deltaY * -0.001;
+            state.scale = Math.min(Math.max(0.1, state.scale), 3);
+            document.documentElement.style.setProperty('--canvas-scale', state.scale);
+            document.getElementById('zoom-val').textContent = `Zoom: ${Math.round(state.scale*100)}%`;
+        }, { passive: false });
+
+        function seededRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function generateRandomPoints(count, size) {
+            let pts = [];
+            const center = size / 2;
+            const radius = size * 0.4;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                const randomRadius = radius * (0.5 + Math.random() * 0.6);
+                const x = center + Math.cos(angle) * randomRadius;
+                const y = center + Math.sin(angle) * randomRadius;
+                pts.push({x, y});
+            }
+            return pts;
+        }
+
+        function addLayer(type) {
+            const id = Date.now();
+            let newLayer = { id, type, x: 120, y: 300, size: 350, color: '#EDEBE7', opacity: 1.0 };
+            
+            if(type === 'text') {
+                newLayer = {...newLayer, text: 'Текст', effect: 'stroke', strokeWidth: 1.5, stitchSize: 8, stitchGap: 4, stitchWeight: 1.5};
+            } else if(type === 'lace') {
+                newLayer = {...newLayer, size: 450, complexity: 12, patternStyle: 'style1', strokeWidth: 2.0};
+            } else if(type === 'portal') {
+                newLayer = { ...newLayer, size: 400, opacity: 0.7, stitchSize: 8, stitchGap: 4, stitchWeight: 1.5, pointsCount: 7, seed: Math.random() };
+                newLayer.points = generateRandomPoints(newLayer.pointsCount, newLayer.size);
+            } else if(type === 'satellites') {
+                newLayer = { ...newLayer, size: 300, color: '#EDEBE7', opacity: 0.9, satCount: 30, satType: 'cross', satSpread: 150, satSize: 8, satWeight: 1.5, seed: Math.random() };
+            }
+            
+            state.layers.push(newLayer);
+            state.selectedId = id;
+            pushHistory();
+            render();
+            syncUI();
+        }
+
+        window.cloneLayer = (id) => {
+            const index = state.layers.findIndex(l => l.id === id);
+            if (index === -1) return;
+            const origin = state.layers[index];
+            const clone = JSON.parse(JSON.stringify(origin));
+            clone.id = Date.now();
+            clone.x += 20; clone.y += 20;
+            state.layers.splice(index + 1, 0, clone);
+            state.selectedId = clone.id;
+            pushHistory();
+            render();
+            syncUI();
+        };
+
+        function generateSatellitesSVG(layer) {
+            const size = layer.size;
+            const center = size / 2;
+            let currentSeed = layer.seed || 0.5;
+            let paths = '';
+            const count = layer.satCount || 20;
+            const spread = layer.satSpread || 100;
+            const sSize = layer.satSize || 6;
+            const sw = layer.satWeight || 1;
+            
+            for (let i = 0; i < count; i++) {
+                currentSeed = seededRandom(currentSeed + i);
+                const angle = currentSeed * Math.PI * 2;
+                currentSeed = seededRandom(currentSeed + 1);
+                const distance = currentSeed * spread;
+                const cx = center + Math.cos(angle) * distance;
+                const cy = center + Math.sin(angle) * distance;
+                
+                if (layer.satType === 'cross') {
+                    paths += `<line x1="${cx - sSize/2}" y1="${cy - sSize/2}" x2="${cx + sSize/2}" y2="${cy + sSize/2}" stroke="${layer.color}" stroke-width="${sw}" />`;
+                    paths += `<line x1="${cx + sSize/2}" y1="${cy - sSize/2}" x2="${cx - sSize/2}" y2="${cy + sSize/2}" stroke="${layer.color}" stroke-width="${sw}" />`;
+                } else if (layer.satType === 'circle') {
+                    paths += `<circle cx="${cx}" cy="${cy}" r="${sSize/2}" fill="none" stroke="${layer.color}" stroke-width="${sw}" />`;
+                } else if (layer.satType === 'pixel') {
+                    paths += `<rect x="${cx - sSize/2}" y="${cy - sSize/2}" width="${sSize}" height="${sSize}" fill="${layer.color}" />`;
+                }
+            }
+            return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="opacity: ${layer.opacity}">${paths}</svg>`;
+        }
+
+        function generateLaceSVG(layer) {
+            const size = layer.size;
+            const center = size / 2;
+            const comp = layer.complexity;
+            const sw = layer.strokeWidth || 1.5;
+            let paths = '';
+            
+            switch (layer.patternStyle) {
+                case 'style1':
+                    for (let r = 20; r <= center * 0.95; r += (center / 7)) {
+                        let pts = [];
+                        let steps = Math.floor(comp * (r / 15));
+                        for (let i = 0; i <= steps; i++) {
+                            let a = (i / steps) * Math.PI * 2;
+                            let w = Math.sin(a * comp) * (r * 0.09);
+                            pts.push(`${center + Math.cos(a)*(r+w)},${center + Math.sin(a)*(r+w)}`);
+                        }
+                        paths += `<polygon points="${pts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.8"/>`;
+                    }
+                    break;
+                case 'style2':
+                    for (let r = 30; r <= center * 0.9; r += (center / 5)) {
+                        let pts = [];
+                        for (let i = 0; i < comp * 2; i++) {
+                            let a = (i / (comp * 2)) * Math.PI * 2;
+                            let currR = i % 2 === 0 ? r : r * (1 - 1.8 / comp);
+                            pts.push(`${center + Math.cos(a)*currR},${center + Math.sin(a)*currR}`);
+                        }
+                        paths += `<polygon points="${pts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.9"/>`;
+                    }
+                    break;
+                case 'style3':
+                    for (let i = 0; i < comp; i++) {
+                        let a = (i / comp) * Math.PI * 2;
+                        let cx = center + Math.cos(a) * (center * 0.4);
+                        let cy = center + Math.sin(a) * (center * 0.4);
+                        paths += `<circle cx="${cx}" cy="${cy}" r="${center * 0.45}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.6"/>`;
+                    }
+                    break;
+                case 'style4':
+                    for(let i=0; i<comp*2; i++) {
+                        let a = (i / (comp*2)) * Math.PI * 2;
+                        let x1 = center + Math.cos(a)*(center * 0.15);
+                        let y1 = center + Math.sin(a)*(center * 0.15);
+                        let x2 = center + Math.cos(a + 1.2)*(center * 0.95);
+                        let y2 = center + Math.sin(a + 1.2)*(center * 0.95);
+                        paths += `<path d="M ${x1} ${y1} Q ${center + Math.cos(a+0.6)*center} ${center + Math.sin(a+0.6)*center} ${x2} ${y2}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.5"/>`;
+                    }
+                    break;
+                case 'style5':
+                    for (let r = 15; r < center; r += 12) {
+                        paths += `<circle cx="${center}" cy="${center}" r="${r}" fill="none" stroke="${layer.color}" stroke-width="${sw}" stroke-dasharray="${r/4} ${r/6}" opacity="0.7"/>`;
+                    }
+                    break;
+                case 'style6':
+                    for (let r = 40; r <= center * 0.9; r += 35) {
+                        let pts = [];
+                        for(let i=0; i<=comp; i++) {
+                            let a = (i/comp)*Math.PI*2;
+                            pts.push(`${center + Math.cos(a)*r},${center + Math.sin(a)*r}`);
+                            if(i < comp) paths += `<circle cx="${center + Math.cos(a)*r}" cy="${center + Math.sin(a)*r}" r="3" fill="none" stroke="${layer.color}" stroke-width="${sw}"/>`;
+                        }
+                        paths += `<polygon points="${pts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw * 0.8}" opacity="0.6"/>`;
+                    }
+                    break;
+                case 'style7':
+                    let spiralPts = [];
+                    for (let theta = 0; theta < Math.PI * 2 * 6; theta += 0.1) {
+                        let r = (center * 0.9) * (theta / (Math.PI * 2 * 6));
+                        spiralPts.push(`${center + Math.cos(theta)*r},${center + Math.sin(theta)*r}`);
+                    }
+                    paths += `<polyline points="${spiralPts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.75"/>`;
+                    break;
+                case 'style8':
+                    for (let i = 0; i < comp; i++) {
+                        let a = (i / comp) * Math.PI * 2;
+                        let rOuter = center * 0.6;
+                        let x = center + Math.cos(a) * rOuter;
+                        let y = center + Math.sin(a) * rOuter;
+                        paths += `<circle cx="${x}" cy="${y}" r="${center * 0.3}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.5"/>`;
+                        paths += `<circle cx="${x}" cy="${y}" r="6" fill="none" stroke="${layer.color}" stroke-width="${sw * 0.6}" opacity="0.7"/>`;
+                    }
+                    break;
+                case 'style9':
+                    let lissajuPts = [];
+                    for (let t = 0; t <= Math.PI * 2; t += 0.02) {
+                        let x = center + Math.sin(comp * t) * (center * 0.9);
+                        let y = center + Math.cos((comp-1) * t) * (center * 0.9);
+                        lissajuPts.push(`${x},${y}`);
+                    }
+                    paths += `<polyline points="${lissajuPts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.7"/>`;
+                    break;
+                case 'style10':
+                    for(let r = 50; r <= center; r += 50) {
+                        let sides = 6;
+                        let pts = [];
+                        for(let i=0; i<=sides; i++) {
+                            let a = (i/sides)*Math.PI*2 + (r/100);
+                            pts.push(`${center + Math.cos(a)*r},${center + Math.sin(a)*r}`);
+                        }
+                        paths += `<polygon points="${pts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw}" stroke-dasharray="8 4" opacity="0.6"/>`;
+                    }
+                    break;
+                case 'style11':
+                    for(let r = 30; r <= center * 0.95; r += 35) {
+                        let numCircles = Math.floor(comp * (r/25));
+                        for(let i=0; i<numCircles; i++) {
+                            let a = (i/numCircles)*Math.PI*2;
+                            let cx = center + Math.cos(a)*r;
+                            let cy = center + Math.sin(a)*r;
+                            paths += `<circle cx="${cx}" cy="${cy}" r="${r*0.35}" fill="none" stroke="${layer.color}" stroke-width="${sw*0.6}" opacity="0.35"/>`;
+                        }
+                    }
+                    break;
+                case 'style12':
+                    let goldenAngle = 2.39996;
+                    for(let i=1; i<comp * 14; i++) {
+                        let r = Math.sqrt(i) * (center * 0.95 / Math.sqrt(comp * 14));
+                        let theta = i * goldenAngle;
+                        let cx = center + Math.cos(theta)*r;
+                        let cy = center + Math.sin(theta)*r;
+                        paths += `<circle cx="${cx}" cy="${cy}" r="${sw * 1.1}" fill="${layer.color}" opacity="0.85"/>`;
+                    }
+                    break;
+                case 'style13':
+                    for(let i=0; i<comp * 3.5; i++) {
+                        let a = (i / (comp*3.5)) * Math.PI * 2;
+                        let x1 = center + Math.cos(a)*center;
+                        let y1 = center + Math.sin(a)*center;
+                        let x2 = center + Math.cos(a + Math.PI - 0.4)*center;
+                        let y2 = center + Math.sin(a + Math.PI - 0.4)*center;
+                        paths += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${x2}" stroke="${layer.color}" stroke-width="${sw*0.5}" opacity="0.45"/>`;
+                    }
+                    break;
+                case 'style14':
+                    let st = 400;
+                    for(let wave = 0; wave < 5; wave++) {
+                        let pts = [];
+                        let amp = 12 + wave * 9;
+                        let freq = comp;
+                        for(let i=0; i<=st; i++) {
+                            let theta = (i/st)*Math.PI*2;
+                            let currR = (center*0.55) + Math.sin(theta * freq) * amp + (wave * 22) - 30;
+                            pts.push(`${center + Math.cos(theta)*currR},${center + Math.sin(theta)*currR}`);
+                        }
+                        paths += `<polygon points="${pts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.65"/>`;
+                    }
+                    break;
+                case 'style15':
+                    for(let r = 25; r <= center * 0.95; r += 30) {
+                        let pts = [];
+                        let rot = (r / center) * Math.PI * 0.8;
+                        for(let i=0; i<comp; i++) {
+                            let theta = (i / comp) * Math.PI * 2 + rot;
+                            pts.push(`${center + Math.cos(theta)*r},${center + Math.sin(theta)*r}`);
+                        }
+                        paths += `<polygon points="${pts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw * 0.9}" opacity="0.75"/>`;
+                    }
+                    break;
+                case 'style16':
+                    let hypPts = [];
+                    let tSteps = 600;
+                    let R_sp = center * 0.65;
+                    let r_sp = (comp / 32) * center * 0.45;
+                    let d_sp = center * 0.35;
+                    for(let i=0; i<=tSteps; i++) {
+                        let t = (i / tSteps) * Math.PI * 2 * 10;
+                        let x = (R_sp - r_sp)*Math.cos(t) + d_sp*Math.cos((R_sp - r_sp)*t/r_sp) + center;
+                        let y = (R_sp - r_sp)*Math.sin(t) - d_sp*Math.sin((R_sp - r_sp)*t/r_sp) + center;
+                        hypPts.push(`${x},${y}`);
+                    }
+                    paths += `<polyline points="${hypPts.join(' ')}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.8"/>`;
+                    break;
+                case 'style17':
+                    for(let i = -5; i <= 5; i++) {
+                        for(let j = -5; j <= 5; j++) {
+                            if((i+j)%2 === 0) {
+                                let cx = center + i * (center * 0.16);
+                                let cy = center + j * (center * 0.16);
+                                paths += `<circle cx="${cx}" cy="${cy}" r="${center*0.07}" fill="none" stroke="${layer.color}" stroke-width="${sw}" opacity="0.5"/>`;
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="opacity: ${layer.opacity}">${paths}</svg>`;
+        }
+
+        function getTextStitchSVGData(layer) {
+            const fontSize = layer.size;
+            const memCanvas = document.createElement('canvas');
+            const mctx = memCanvas.getContext('2d');
+            mctx.font = `400 ${fontSize}px Helvetica, Arial, sans-serif`;
+            const textWidth = Math.ceil(mctx.measureText(layer.text).width) + 60;
+            const textHeight = Math.ceil(fontSize * 1.6);
+            
+            memCanvas.width = textWidth; memCanvas.height = textHeight;
+            mctx.font = `400 ${fontSize}px Helvetica, Arial, sans-serif`;
+            mctx.fillStyle = '#000000'; mctx.textBaseline = 'top';
+            mctx.fillText(layer.text, 20, 20);
+            
+            const pixels = mctx.getImageData(0, 0, textWidth, textHeight).data;
+            let pathData = '';
+            const step = layer.stitchSize + layer.stitchGap;
+            const s = layer.stitchSize;
+            
+            for (let y = 0; y < textHeight - step; y += step) {
+                for (let x = 0; x < textWidth - step; x += step) {
+                    let inside = true;
+                    const checkOffsets = [{dx:2, dy:2}, {dx:s-2, dy:2}, {dx:s/2, dy:s/2}, {dx:2, dy:s-2}, {dx:s-2, dy:s-2}];
+                    for(let o of checkOffsets) {
+                        const px = Math.floor(x + o.dx);
+                        const py = Math.floor(y + o.dy);
+                        if (py >= textHeight || px >= textWidth || pixels[(py * textWidth + px) * 4 + 3] < 50) {
+                            inside = false; break;
+                        }
+                    }
+                    if (inside) {
+                        pathData += `M ${x} ${y} L ${x + s} ${y + s} M ${x + s} ${y} L ${x} ${y + s} `;
+                    }
+                }
+            }
+            return { pathData, w: textWidth, h: textHeight };
+        }
+
+        function getPortalStitchSVGData(layer) {
+            const size = layer.size;
+            const memCanvas = document.createElement('canvas');
+            memCanvas.width = size; memCanvas.height = size;
+            const mctx = memCanvas.getContext('2d');
+            
+            if (!layer.points || layer.points.length === 0) {
+                layer.points = generateRandomPoints(layer.pointsCount, size);
+            }
+            
+            mctx.fillStyle = '#000000';
+            mctx.beginPath();
+            mctx.moveTo(layer.points[0].x, layer.points[0].y);
+            for (let i = 1; i < layer.points.length; i++) {
+                mctx.lineTo(layer.points[i].x, layer.points[i].y);
+            }
+            mctx.closePath(); mctx.fill();
+            
+            const pixels = mctx.getImageData(0, 0, size, size).data;
+            let pathData = '';
+            const step = layer.stitchSize + layer.stitchGap;
+            const s = layer.stitchSize;
+            
+            for (let y = 0; y < size - step; y += step) {
+                for (let x = 0; x < size - step; x += step) {
+                    const idx = (Math.floor(y + s/2) * size + Math.floor(x + s/2)) * 4;
+                    if (pixels[idx + 3] > 100) {
+                        pathData += `M ${x} ${y} L ${x + s} ${y + s} M ${x + s} ${y} L ${x} ${y + s} `;
+                    }
+                }
+            }
+            return pathData;
+        }
+
+        function render() {
+            const items = canvas.querySelectorAll('.layer-element');
+            items.forEach(el => el.remove());
+
+            state.layers.forEach(layer => {
+                const container = document.createElement('div');
+                container.className = `layer-element ${state.selectedId === layer.id ? 'selected' : ''}`;
+                container.style.left = layer.x + 'px'; 
+                container.style.top = layer.y + 'px';
+                
+                if(layer.type === 'text') {
+                    if(layer.effect === 'stroke') {
+                        container.innerHTML = `<svg height="${layer.size*1.6}" width="1500"><text x="20" y="${layer.size}" font-size="${layer.size}" font-family="Helvetica, Arial, sans-serif" fill="none" stroke="${layer.color}" stroke-width="${layer.strokeWidth}">${layer.text}</text></svg>`;
+                    } else {
+                        const data = getTextStitchSVGData(layer);
+                        container.innerHTML = `<svg width="${data.w}" height="${data.h}"><path d="${data.pathData}" stroke="${layer.color}" stroke-width="${layer.stitchWeight}" stroke-linecap="round" fill="none"/></svg>`;
+                    }
+                } else if(layer.type === 'lace') {
+                    container.innerHTML = generateLaceSVG(layer);
+                } else if(layer.type === 'portal') {
+                    const pData = getPortalStitchSVGData(layer);
+                    container.innerHTML = `<svg width="${layer.size}" height="${layer.size}" style="opacity: ${layer.opacity}"><path d="${pData}" stroke="${layer.color}" stroke-width="${layer.stitchWeight}" stroke-linecap="round" fill="none"/></svg>`;
+                } else if(layer.type === 'satellites') {
+                    container.innerHTML = generateSatellitesSVG(layer);
+                }
+
+                container.onmousedown = (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+                    state.selectedId = layer.id; 
+                    syncUI(); 
+                    render();
+                    
+                    let startX = e.clientX; let startY = e.clientY;
+                    let initX = layer.x; let initY = layer.y;
+                    
+                    document.onmousemove = (em) => {
+                        layer.x = initX + (em.clientX - startX) / state.scale;
+                        layer.y = initY + (em.clientY - startY) / state.scale;
+                        container.style.left = layer.x + 'px'; 
+                        container.style.top = layer.y + 'px';
+                        
+                        const sX = document.getElementById('param-x');
+                        const sY = document.getElementById('param-y');
+                        if (sX) sX.value = Math.round(layer.x);
+                        if (sY) sY.value = Math.round(layer.y);
+                        const lblX = document.getElementById('val-x');
+                        const lblY = document.getElementById('val-y');
+                        if (lblX) lblX.textContent = Math.round(layer.x) + 'px';
+                        if (lblY) lblY.textContent = Math.round(layer.y) + 'px';
+                    };
+                    document.onmouseup = () => {
+                        document.onmousemove = null;
+                        pushHistory();
+                    };
+                };
+                canvas.appendChild(container);
+            });
+
+            layersUI.innerHTML = '';
+            [...state.layers].reverse().forEach(layer => {
+                const div = document.createElement('div');
+                div.className = `layer-item ${state.selectedId === layer.id ? 'active' : ''}`;
+                
+                let displayName = layer.type.toUpperCase();
+                if(layer.type === 'portal') displayName = 'ФОРМА ИЗ КРЕСТИКОВ';
+                if(layer.type === 'satellites') displayName = 'МЕЛКИЕ ЭЛЕМЕНТЫ';
+                if(layer.type === 'text') displayName = `ТЕКСТ: ${layer.text}`;
+                if(layer.type === 'lace') displayName = `КРУЖЕВО`;
+                
+                div.innerHTML = `
+                    <span>${displayName}</span>
+                    <div class="layer-controls-right">
+                        <button class="layer-btn" title="Дублировать слой" onclick="cloneLayer(${layer.id}); event.stopPropagation();">📋</button>
+                        <button class="layer-btn" title="Поднять слой" onclick="move(${layer.id},1); event.stopPropagation();">▲</button>
+                        <button class="layer-btn" title="Удалить слой" onclick="del(${layer.id}); event.stopPropagation();">✕</button>
+                    </div>
+                `;
+                div.onclick = () => { state.selectedId = layer.id; syncUI(); render(); };
+                layersUI.appendChild(div);
+            });
+        }
+
+        window.exportPoster = function(format) {
+            let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="700" height="1000" viewBox="0 0 700 1000">`;
+            svgContent += `<rect width="700" height="1000" fill="${state.canvasBg}"/>`;
+            
+            let gap = state.grid.gap;
+            let dotSize = state.grid.dotSize || 1.5;
+            let gridOp = state.grid.dotOpacity || 0.3;
+            for (let x = 0; x <= 700; x += gap) {
+                for (let y = 0; y <= 1000; y += gap) {
+                    svgContent += `<circle cx="${x}" cy="${y}" r="${dotSize/2}" fill="${state.canvasDot}" opacity="${gridOp}"/>`;
+                }
+            }
+            
+            state.layers.forEach(layer => {
+                svgContent += `<g transform="translate(${layer.x}, ${layer.y})">`;
+                
+                if (layer.type === 'text') {
+                    if (layer.effect === 'stroke') {
+                        svgContent += `<text x="20" y="${layer.size}" font-size="${layer.size}" font-family="Helvetica, Arial, sans-serif" fill="none" stroke="${layer.color}" stroke-width="${layer.strokeWidth}">${layer.text}</text>`;
+                    } else {
+                        const data = getTextStitchSVGData(layer);
+                        svgContent += `<path d="${data.pathData}" stroke="${layer.color}" stroke-width="${layer.stitchWeight}" stroke-linecap="round" fill="none"/>`;
+                    }
+                } else if (layer.type === 'lace') {
+                    let laceSVG = generateLaceSVG(layer);
+                    svgContent += laceSVG.replace(/<svg[^>]*>/, '').replace('</svg>', '');
+                } else if (layer.type === 'portal') {
+                    const pData = getPortalStitchSVGData(layer);
+                    svgContent += `<g opacity="${layer.opacity}"><path d="${pData}" stroke="${layer.color}" stroke-width="${layer.stitchWeight}" stroke-linecap="round" fill="none"/></g>`;
+                } else if (layer.type === 'satellites') {
+                    let satSVG = generateSatellitesSVG(layer);
+                    svgContent += satSVG.replace(/<svg[^>]*>/, '').replace('</svg>', '');
+                }
+                svgContent += `</g>`;
+            });
+            svgContent += `</svg>`;
+
+            if (format === 'svg') {
+                const blob = new Blob([svgContent], {type: 'image/svg+xml;charset=utf-8'});
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `poster_${Date.now()}.svg`;
+                link.click();
+                URL.revokeObjectURL(url);
+            } 
+            else if (format === 'png') {
+                const svgBlob = new Blob([svgContent], {type: 'image/svg+xml;charset=utf-8'});
+                const url = URL.createObjectURL(svgBlob);
+                const img = new Image();
+                img.onload = function() {
+                    const resultCanvas = document.createElement('canvas');
+                    resultCanvas.width = 700; resultCanvas.height = 1000;
+                    const ctx = resultCanvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const pLink = document.createElement('a');
+                    pLink.href = resultCanvas.toDataURL('image/png');
+                    pLink.download = `poster_${Date.now()}.png`;
+                    pLink.click();
+                    URL.revokeObjectURL(url);
+                };
+                img.src = url;
+            }
+        };
+
+        function triggerRandomForm() {
+            const l = state.layers.find(layer => layer.id === state.selectedId);
+            if (l && l.type === 'portal') {
+                l.points = generateRandomPoints(l.pointsCount, l.size);
+                pushHistory();
+                render();
+            }
+        }
+
+        function triggerRandomSatellites() {
+            const l = state.layers.find(layer => layer.id === state.selectedId);
+            if (l && l.type === 'satellites') {
+                l.seed = Math.random();
+                pushHistory();
+                render();
+            }
+        }
+
+        function syncUI() {
+            const l = state.layers.find(layer => layer.id === state.selectedId);
+            if(!l) { propEditor.innerHTML = ''; return; }
+            
+            let html = `<div class="section-title">Свойства выбранного слоя</div>
+            <div class="control-group"><label>Расположение X: <span id="val-x">${Math.round(l.x)}px</span></label><input type="range" id="param-x" min="-400" max="1500" value="${Math.round(l.x)}" oninput="updCoords('x',this.value)" onchange="pushHistory()"></div>
+            <div class="control-group"><label>Расположение Y: <span id="val-y">${Math.round(l.y)}px</span></label><input type="range" id="param-y" min="-400" max="1500" value="${Math.round(l.y)}" oninput="updCoords('y',this.value)" onchange="pushHistory()"></div>
+            <div class="control-group"><label>Размер: <span id="val-size">${l.size}</span></label><input type="range" value="${l.size}" min="20" max="1500" oninput="upd('size',this.value)" onchange="pushHistory()"></div>
+            <div class="control-group"><label>Цвет объекта</label><input type="color" value="${l.color}" oninput="upd('color',this.value)" onchange="pushHistory()"></div>`;
+            
+            if(l.type === 'text') {
+                html += `<div class="control-group"><label>Содержимое текста</label><input type="text" value="${l.text}" oninput="upd('text',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Режим отображения</label><select onchange="upd('effect',this.value); pushHistory(); syncUI();"><option value="stroke" ${l.effect==='stroke'?'selected':''}>Обводка контура</option><option value="stitch" ${l.effect==='stitch'?'selected':''}>Вышивка крестиком</option></select></div>`;
+                if(l.effect === 'stroke') {
+                    html += `<div class="control-group"><label>Толщина контура: <span id="val-strokeWidth">${l.strokeWidth}</span></label><input type="range" value="${l.strokeWidth}" min="0.1" max="15" step="0.1" oninput="upd('strokeWidth',this.value)" onchange="pushHistory()"></div>`;
+                } else {
+                    html += `<div class="control-group"><label>Размер крестика: <span id="val-stitchSize">${l.stitchSize}</span></label><input type="range" value="${l.stitchSize}" min="4" max="25" oninput="upd('stitchSize',this.value)" onchange="pushHistory()"></div>
+                    <div class="control-group"><label>Зазор крестика: <span id="val-stitchGap">${l.stitchGap}</span></label><input type="range" value="${l.stitchGap}" min="0" max="50" oninput="upd('stitchGap',this.value)" onchange="pushHistory()"></div>
+                    <div class="control-group"><label>Толщина нити: <span id="val-stitchWeight">${l.stitchWeight}</span></label><input type="range" value="${l.stitchWeight}" min="0.5" max="8" step="0.5" oninput="upd('stitchWeight',this.value)" onchange="pushHistory()"></div>`;
+                }
+            } else if(l.type === 'lace') {
+                html += `<div class="control-group"><label>Вариация кружева (1-17)</label><select onchange="upd('patternStyle',this.value); pushHistory();">
+                    <option value="style1" ${l.patternStyle==='style1'?'selected':''}>1. Гиперболическое гофре</option>
+                    <option value="style2" ${l.patternStyle==='style2'?'selected':''}>2. Радиально-зубчатая звезда</option>
+                    <option value="style3" ${l.patternStyle==='style3'?'selected':''}>3. Цветок жизни</option>
+                    <option value="style4" ${l.patternStyle==='style4'?'selected':''}>4. Роторный гироскоп</option>
+                    <option value="style5" ${l.patternStyle==='style5'?'selected':''}>5. Пунктирный кокон</option>
+                    <option value="style6" ${l.patternStyle==='style6'?'selected':''}>6. Паутина с узлами</option>
+                    <option value="style7" ${l.patternStyle==='style7'?'selected':''}>7. Спираль Архимеда</option>
+                    <option value="style8" ${l.patternStyle==='style8'?'selected':''}>8. Фрактальные розетки</option>
+                    <option value="style9" ${l.patternStyle==='style9'?'selected':''}>9. Гармоника Лиссажу</option>
+                    <option value="style10" ${l.patternStyle==='style10'?'selected':''}>10. Соты Дракона</option>
+                    <option value="style11" ${l.patternStyle==='style11'?'selected':''}>11. Сакральная Мандала</option>
+                    <option value="style12" ${l.patternStyle==='style12'?'selected':''}>12. Полутоновый Филлотаксис</option>
+                    <option value="style13" ${l.patternStyle==='style13'?'selected':''}>13. Муаровый Кибер-Гиперболоид</option>
+                    <option value="style14" ${l.patternStyle==='style14'?'selected':''}>14. Банкнотный Гильош</option>
+                    <option value="style15" ${l.patternStyle==='style15'?'selected':''}>15. Фрактальная Сверхновая</option>
+                    <option value="style16" ${l.patternStyle==='style16'?'selected':''}>16. Спирографическая Гипотрохоида</option>
+                    <option value="style17" ${l.patternStyle==='style17'?'selected':''}>17. Резонансная Геометрическая Сетка</option>
+                </select></div>
+                <div class="control-group"><label>Толщина нитей: <span id="val-strokeWidth">${l.strokeWidth || 1.5}</span></label><input type="range" value="${l.strokeWidth || 1.5}" min="0.5" max="10" step="0.1" oninput="upd('strokeWidth',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Сложность узора: <span id="val-complexity">${l.complexity}</span></label><input type="range" value="${l.complexity}" min="4" max="32" oninput="upd('complexity',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Прозрачность: <span id="val-opacity">${l.opacity}</span></label><input type="range" value="${l.opacity}" min="0.1" max="1" step="0.1" oninput="upd('opacity',this.value)" onchange="pushHistory()"></div>`;
+            } else if(l.type === 'portal') {
+                html += `<div class="control-group"><label>Случайные вершины: <span id="val-pointsCount">${l.pointsCount}</span></label><input type="range" value="${l.pointsCount}" min="4" max="20" oninput="updPortalPoints(this.value)" onchange="pushHistory()"></div>
+                <button class="btn" style="margin-bottom:15px;" onclick="triggerRandomForm()">Сгенерировать форму</button>
+                <div class="control-group"><label>Прозрачность: <span id="val-opacity">${l.opacity}</span></label><input type="range" value="${l.opacity}" min="0.1" max="1" step="0.05" oninput="upd('opacity',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Размер крестика: <span id="val-stitchSize">${l.stitchSize}</span></label><input type="range" value="${l.stitchSize}" min="4" max="25" oninput="upd('stitchSize',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Зазор крестика: <span id="val-stitchGap">${l.stitchGap}</span></label><input type="range" value="${l.stitchGap}" min="0" max="50" oninput="upd('stitchGap',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Толщина нити: <span id="val-stitchWeight">${l.stitchWeight}</span></label><input type="range" value="${l.stitchWeight}" min="0.5" max="8" step="0.5" oninput="upd('stitchWeight',this.value)" onchange="pushHistory()"></div>`;
+            } else if(l.type === 'satellites') {
+                html += `<div class="control-group"><label>Тип элементов</label><select onchange="upd('satType',this.value); pushHistory();"><option value="cross" ${l.satType==='cross'?'selected':''}>Крестики</option><option value="circle" ${l.satType==='circle'?'selected':''}>Кольца</option><option value="pixel" ${l.satType==='pixel'?'selected':''}>Пиксели</option></select></div>
+                <button class="btn" style="margin-bottom:15px;" onclick="triggerRandomSatellites()">Перемешать (Seed)</button>
+                <div class="control-group"><label>Количество: <span id="val-satCount">${l.satCount}</span></label><input type="range" value="${l.satCount}" min="5" max="150" oninput="upd('satCount',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Радиус рассеивания: <span id="val-satSpread">${l.satSpread}px</span></label><input type="range" value="${l.satSpread}" min="20" max="600" oninput="upd('satSpread',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Размер частиц: <span id="val-satSize">${l.satSize}px</span></label><input type="range" value="${l.satSize}" min="2" max="30" oninput="upd('satSize',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Толщина линий: <span id="val-satWeight">${l.satWeight}</span></label><input type="range" value="${l.satWeight}" min="0.5" max="5" step="0.1" oninput="upd('satWeight',this.value)" onchange="pushHistory()"></div>
+                <div class="control-group"><label>Прозрачность: <span id="val-opacity">${l.opacity}</span></label><input type="range" value="${l.opacity}" min="0.1" max="1" step="0.05" oninput="upd('opacity',this.value)" onchange="pushHistory()"></div>`;
+            }
+            
+            propEditor.innerHTML = html;
+        }
+
+        window.upd = (k, v) => { 
+            const l = state.layers.find(layer => layer.id === state.selectedId); 
+            if(l) { 
+                l[k] = (['color','text','effect','patternStyle','satType'].includes(k)) ? v : parseFloat(v); 
+                if(l.type === 'portal' && k === 'size') {
+                    l.points = generateRandomPoints(l.pointsCount, l.size);
+                }
+                const span = document.getElementById(`val-${k}`);
+                if(span) span.textContent = v;
+                render(); 
+            } 
+        };
+        
+        window.updCoords = (axis, value) => {
+            const l = state.layers.find(layer => layer.id === state.selectedId);
+            if(l) {
+                l[axis] = parseFloat(value);
+                const span = document.getElementById(`val-${axis}`);
+                if(span) span.textContent = value + 'px';
+                render();
+            }
+        };
+
+        window.updPortalPoints = (val) => {
+            const l = state.layers.find(layer => layer.id === state.selectedId);
+            if(l && l.type === 'portal') {
+                l.pointsCount = parseInt(val);
+                l.points = generateRandomPoints(l.pointsCount, l.size);
+                const span = document.getElementById('val-pointsCount');
+                if(span) span.textContent = val;
+                render();
+            }
+        };
+        
+        window.del = (id) => { 
+            state.layers = state.layers.filter(l => l.id !== id); 
+            if(state.layers.length) state.selectedId = state.layers[0].id; 
+            else state.selectedId = null;
+            pushHistory(); render(); syncUI(); 
+        };
+        
+        window.move = (id, d) => { 
+            const i = state.layers.findIndex(l => l.id === id); 
+            if(i+d >= 0 && i+d < state.layers.length) { 
+                [state.layers[i], state.layers[i+d]] = [state.layers[i+d], state.layers[i]]; 
+                pushHistory(); render(); 
+            } 
+        };
+
+        document.documentElement.style.setProperty('--canvas-scale', state.scale);
+        pushHistory();
+        syncUI(); 
+        render();
+    </script>
+</body>
+</html>
